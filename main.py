@@ -25,7 +25,7 @@ if __name__ == "__main__":
         # 최신 SDK 방식으로 Gemini 호출
         client = genai.Client(api_key=GEMINI_API_KEY)
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-2.0-flash',
             contents=f"다음 뉴스 제목을 한국어로 한 줄 요약해 줘: {latest_title}",
         )
         
