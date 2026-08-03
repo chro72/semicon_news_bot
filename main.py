@@ -3,57 +3,37 @@ import requests
 import feedparser
 from google import genai
 
-# 1. 환경 변수에서 비밀키 불러오기
+# 1. 환경 변수 체크
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# 최신 Gemini Client 설정
-client = genai.Client(api_key=GEMINI_API_KEY)
-
-# 2. 무료 RSS 피드 주소
-RSS_URLS = [
-    "https://seekingalpha.com/symbol/NVDA.xml",
-    "https://seekingalpha.com/symbol/TSM.xml",
-    "https://news.google.com/rss/search?q=semiconductor+stock&hl=en-US&gl=US&ceid=US:en"
-]
-
-def fetch_latest_news():
-    news_items = []
-    for url in RSS_URLS:
-        feed = feedparser.parse(url)
-        for entry in feed.entries[:2]:
-            news_items.append(f"제목: {entry.title}\n내용: {entry.get('summary', '내용 없음')}")
-    return "\n---\n".join(news_items[:5])
-
-def summarize_and_translate(text):
-    prompt = f"""
-    당신은 미국 반도체 주식 전문 분석가입니다. 
-    아래 수집된 최신 뉴스들을 바탕으로 한국어로 완벽하게 번역하고 핵심 요점을 정리해 주세요.
-
-    [작성 양식]
-    1. 💡 오늘의 반도체 핵심 요약 (3줄)
-    2. 🔍 주요 종목/이슈별 상세 내용
-
-    뉴스 데이터:
-    {text}
-    """
-    # 최신 SDK 규격 모델 및 메서드 호출
-    response = client.models.generate_content(
-        model='gemini-2.5-flash',
-        contents=prompt,
-    )
-    return response.text
-
-def send_telegram_message(message):
+def send_telegram(text):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": message
-    }
+    payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text}
     requests.post(url, data=payload)
 
 if __name__ == "__main__":
-    raw_news = fetch_latest_news()
-    summary = summarize_and_translate(raw_news)
-    send_telegram_message(summary)
+    #Secrets 값 정상 수신 여부 확인
+    if not GEMINI_API_KEY:
+        send_telegram("❌ Gemini API 키를 찾을 수 없습니다. (Secrets 설정 확인 필요)")
+        exit()
+
+    try:
+        # 뉴스 수집 테스트
+        feed = feedparser.parse("https://seekingalpha.com/symbol/NVDA.xml")
+        latest_title = feed.entries[0].title if feed.entries else "뉴스 없음"
+        
+        # Gemini AI 테스트
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=f"다음 뉴스 제목을 한국어로 한 줄 요약해 줘: {latest_title}",
+        )
+        
+        # 성공 시 메시지 발송
+        send_telegram(f"🎉 성공! 반도체 로봇 정상 동작 완료!\n\n요약 결과:\n{response.text}")
+
+    except Exception as e:
+        # 오류 발생 시 오류 내용을 텔레그램으로 바로 쏨
+        send_telegram(f"⚠️ 오류 발생:\n{str(e)}")
