@@ -8,7 +8,7 @@ TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# 신규 Gemini Client 설정
+# 최신 Gemini Client 설정
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 # 2. 무료 RSS 피드 주소
@@ -38,6 +38,7 @@ def summarize_and_translate(text):
     뉴스 데이터:
     {text}
     """
+    # 최신 SDK 규격 모델 및 메서드 호출
     response = client.models.generate_content(
         model='gemini-2.5-flash',
         contents=prompt,
