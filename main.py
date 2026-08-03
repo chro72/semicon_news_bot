@@ -48,20 +48,12 @@ if __name__ == "__main__":
     {raw_news}
     """
 
-    # 1차 시도: gemini-2.5-flash
+    # 가장 안정적이고 무료 한도가 여유로운 gemini-1.5-flash 모델 적용
     try:
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-1.5-flash',
             contents=prompt,
         )
         send_telegram(response.text)
     except Exception as e:
-        # 1차 실패 시 2차 시도: gemini-2.0-flash
-        try:
-            response = client.models.generate_content(
-                model='gemini-2.0-flash',
-                contents=prompt,
-            )
-            send_telegram(response.text)
-        except Exception as retry_e:
-            send_telegram(f"⚠️ 오류 발생:\n{str(retry_e)}")
+        send_telegram(f"⚠️ 오류 발생:\n{str(e)}")
