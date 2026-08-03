@@ -35,8 +35,6 @@ if __name__ == "__main__":
 
     try:
         raw_news = fetch_latest_news()
-        
-        # 신규 client 생성 방식
         client = genai.Client(api_key=GEMINI_API_KEY)
         
         prompt = f"""
@@ -51,9 +49,9 @@ if __name__ == "__main__":
         {raw_news}
         """
 
-        # 최신 규격 모델 호출
+        # 구글 정식 정제 모델명인 gemini-2.0-flash 사용
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-2.0-flash',
             contents=prompt,
         )
         
