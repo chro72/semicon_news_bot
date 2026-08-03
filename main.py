@@ -38,7 +38,6 @@ def summarize_and_translate(text):
     뉴스 데이터:
     {text}
     """
-    # 최신 SDK 규격 모델 호출
     response = client.models.generate_content(
         model='gemini-2.5-flash',
         contents=prompt,
