@@ -1,18 +1,17 @@
 import os
 import requests
 import feedparser
-import google.generativeai as genai
+from google import genai
 
 # 1. 환경 변수에서 비밀키 불러오기
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# Gemini AI 설정
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
+# Gemini client 설정
+client = genai.Client(api_key=GEMINI_API_KEY)
 
-# 2. 무료 RSS 피드 주소 (엔비디아, TSMC, 반도체 전체 뉴스)
+# 2. 무료 RSS 피드 주소
 RSS_URLS = [
     "https://seekingalpha.com/symbol/NVDA.xml",
     "https://seekingalpha.com/symbol/TSM.xml",
@@ -23,9 +22,9 @@ def fetch_latest_news():
     news_items = []
     for url in RSS_URLS:
         feed = feedparser.parse(url)
-        for entry in feed.entries[:2]:  # 피드당 최신 2개 수집
+        for entry in feed.entries[:2]:
             news_items.append(f"제목: {entry.title}\n내용: {entry.get('summary', '내용 없음')}")
-    return "\n---\n".join(news_items[:5])  # 상위 5개 정리
+    return "\n---\n".join(news_items[:5])
 
 def summarize_and_translate(text):
     prompt = f"""
@@ -39,7 +38,10 @@ def summarize_and_translate(text):
     뉴스 데이터:
     {text}
     """
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(
+        model='gemini-2.5-flash',
+        contents=prompt,
+    )
     return response.text
 
 def send_telegram_message(message):
