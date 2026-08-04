@@ -34,6 +34,8 @@ if __name__ == "__main__":
         exit()
 
     raw_news = fetch_latest_news()
+    
+    # 신규 genai Client 초기화
     client = genai.Client(api_key=GEMINI_API_KEY)
     
     prompt = f"""
@@ -48,10 +50,10 @@ if __name__ == "__main__":
     {raw_news}
     """
 
-    # 가장 안정적이고 무료 한도가 여유로운 gemini-1.5-flash 모델 적용
     try:
+        # 표준 모델인 gemini-2.0-flash 지정
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-2.0-flash',
             contents=prompt,
         )
         send_telegram(response.text)
