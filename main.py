@@ -47,8 +47,8 @@ if __name__ == "__main__":
     {raw_news}
     """
 
-    # 429 에러 발생 시 최대 3번 자동 재시도하는 안전 로직
-    max_retries = 3
+    # 429 오류 대비 강력한 재시도 안전장치 (최대 5회, 35초 대기)
+    max_retries = 5
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(
@@ -56,11 +56,13 @@ if __name__ == "__main__":
                 contents=prompt,
             )
             send_telegram(response.text)
-            break  # 성공 시 반복문 탈출
+            break  # 성공 시 정상 종료
         except Exception as e:
-            if "429" in str(e) and attempt < max_retries - 1:
-                time.sleep(30)  # 429 발생 시 30초 대기 후 재시도
+            error_msg = str(e)
+            # 429 또는 Quota/Exhausted 관련 문구가 포함된 경우 무조건 재시도
+            if ("429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg) and attempt < max_retries - 1:
+                time.sleep(35)  # 35초 대기 후 재시도
                 continue
             else:
-                send_telegram(f"⚠️ 오류 발생:\n{str(e)}")
+                send_telegram(f"⚠️ 오류 발생:\n{error_msg}")
                 break
