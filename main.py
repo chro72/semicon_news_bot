@@ -59,7 +59,7 @@ if __name__ == "__main__":
             break  # 성공 시 반복문 탈출
         except Exception as e:
             if "429" in str(e) and attempt < max_retries - 1:
-                time.sleep(10)  # 429 발생 시 10초 대기 후 재시도
+                time.sleep(30)  # 429 발생 시 30초 대기 후 재시도
                 continue
             else:
                 send_telegram(f"⚠️ 오류 발생:\n{str(e)}")
