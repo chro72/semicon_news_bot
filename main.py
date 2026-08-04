@@ -1,9 +1,9 @@
 import os
+import time
 import requests
 import feedparser
 from google import genai
 
-# 1. 환경 변수 체크
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
@@ -13,7 +13,6 @@ def send_telegram(text):
     payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text}
     requests.post(url, data=payload)
 
-# 2. 무료 RSS 피드 수집
 RSS_URLS = [
     "https://seekingalpha.com/symbol/NVDA.xml",
     "https://seekingalpha.com/symbol/TSM.xml",
@@ -30,12 +29,10 @@ def fetch_latest_news():
 
 if __name__ == "__main__":
     if not GEMINI_API_KEY:
-        send_telegram("❌ Gemini API 키를 찾을 수 없습니다. (Secrets 설정 확인 필요)")
+        send_telegram("❌ Gemini API 키를 찾을 수 없습니다.")
         exit()
 
     raw_news = fetch_latest_news()
-    
-    # 신규 genai Client 초기화
     client = genai.Client(api_key=GEMINI_API_KEY)
     
     prompt = f"""
@@ -50,12 +47,20 @@ if __name__ == "__main__":
     {raw_news}
     """
 
-    try:
-        # 표준 모델인 gemini-2.0-flash 지정
-        response = client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt,
-        )
-        send_telegram(response.text)
-    except Exception as e:
-        send_telegram(f"⚠️ 오류 발생:\n{str(e)}")
+    # 429 에러 발생 시 최대 3번 자동 재시도하는 안전 로직
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = client.models.generate_content(
+                model='gemini-2.0-flash-lite',
+                contents=prompt,
+            )
+            send_telegram(response.text)
+            break  # 성공 시 반복문 탈출
+        except Exception as e:
+            if "429" in str(e) and attempt < max_retries - 1:
+                time.sleep(10)  # 429 발생 시 10초 대기 후 재시도
+                continue
+            else:
+                send_telegram(f"⚠️ 오류 발생:\n{str(e)}")
+                break
